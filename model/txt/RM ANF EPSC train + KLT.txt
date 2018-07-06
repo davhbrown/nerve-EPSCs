@@ -1,0 +1,530 @@
+/*
+Simulation of ANF response and NA input current to Sinusoidally Modulated Stimuli + Low-threshold K+ current
+*/
+
+
+
+
+//		PARAMETER TO EDIT
+// ***************************************
+// *						*
+// *						*
+// *						*
+
+var dbl	y = randseed(4226);		// CHANGE UPON EACH OPENING
+// *						*
+// *						*
+// *						*
+// ***************************************
+
+
+
+
+var int
+	vread = true,
+	mcell = false;
+// SIM = false false
+// SIM + MC = true true
+// DC + real neuron = true false
+
+
+
+
+
+//State variables
+var dbl	V = 0;	//mV
+var dbl	dummy_in = 0.0; //if vread = false, "dummy_in" used for Voltage input in amplifier_io.kin
+
+
+
+//initiate time
+var dbl	t = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+//			PARAMETERS TO EDIT
+// *************************************************************
+// *									 *
+// *									 *
+// *									 *
+
+
+
+var dbl	gLT = 25;				// K-LT conductance
+
+
+var dbl	SAM_Hz = 25;				// Hz	"modulation depth" constant = 50-350 spikes/s
+
+//	  13  25  50  100
+// fractional values of SAM_Hz yieilds artifacts...round 12.5 to 13
+
+
+
+var dbl	inputs = 16;			// 8 inputs:		mu = 4.5 for good approximation via normal dist
+						// 16 inputs:		mu = 8.5
+
+
+	// 16 SYNAPTIC INPUTS
+	var dbl	factor = 81.92*1.21;		// 81.92 avg of 1 input, 1.21 scales to compensate for qub minimizer artifact
+	var dbl	offset = 100;			// 100 offset also helps for 16 inputs
+
+	// 8 SYNAPTIC INPUTS
+	//var dbl	factor = 81.92*1.3;
+	//var dbl	offset = 0;			// no offset for 8 inputs
+
+
+var dbl	fc = 200,		// Hz			center frequency
+		delta = 150;		// fc +- delta	150 yields 50 to 350 Hz (100% depth; 50 ~= spont, 350 = max)
+
+
+/*
+	    Assuming center freq of 200...
+		Depth (%)	delta
+		-------------------
+		100		150
+		50		75
+		25		37.5
+*/
+
+
+
+// *									 *
+// *									 *
+// *									 *
+// *************************************************************
+
+
+
+
+
+
+
+// =================[ SAM GENERATION ]=========================================
+
+// z1-z2 offset time, used below
+var dbl	z_shift = 1000475;
+
+
+// offset FM sines yields window for sigmoids in "d" to generate impulses
+var dbl	z1 := sin( (6.28*(fc/1000000)*t) - (delta/SAM_Hz) * sin(6.28*(SAM_Hz/1000000)*t) ) ;
+var dbl	z2 := sin( (6.28*(fc/1000000)*(t+z_shift)) - (delta/SAM_Hz) * sin(6.28*(SAM_Hz/1000000)*(t+z_shift)) ) ;
+
+// ============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// frequency and period information for amplitude scale "A" (rate independen of SAM!)
+var dbl	freq = 350;			// frequency that drives A, i, and x doesn't change
+						// if FREQ > 350 or duration > 400 ms   MUST ADD TO ARRAY!!
+var dbl	f = freq/1000;
+var dbl	period = (1/f)*1000;
+
+
+
+
+// BINOMIAL DISTRIBUTION approximated by normal distribution where P(spike) = p = .5
+
+// MUST add .5 correction factor to approximate binomial distribution via normal dist
+var dbl	mu = (inputs*.5)+.5,			// add .5 to mu for proper correction factor
+		sd = sqrt((mu-.5)*.5);		// subtract .5 before calculating sd
+
+
+
+// EPSC Amplitudes of each cycle pulled from binomial dist
+
+// approximating a binomial distribution (true) with a normal distribution (practical)
+array dbl	amps[1,141];					// <= 350Hz over <=400ms = 140 cycles
+	amps[1] = (int(randomg(mu,sd))*factor)+offset;		// factor+offset yield experimentally observed amplitudes
+	amps[2] = (int(randomg(mu,sd))*factor)+offset;
+	amps[3] = (int(randomg(mu,sd))*factor)+offset;
+	amps[4] = (int(randomg(mu,sd))*factor)+offset;
+	amps[5] = (int(randomg(mu,sd))*factor)+offset;
+	amps[6] = (int(randomg(mu,sd))*factor)+offset;
+	amps[7] = (int(randomg(mu,sd))*factor)+offset;
+	amps[8] = (int(randomg(mu,sd))*factor)+offset;
+	amps[9] = (int(randomg(mu,sd))*factor)+offset;
+	amps[10] = (int(randomg(mu,sd))*factor)+offset;
+	amps[11] = (int(randomg(mu,sd))*factor)+offset;
+	amps[12] = (int(randomg(mu,sd))*factor)+offset;
+	amps[13] = (int(randomg(mu,sd))*factor)+offset;
+	amps[14] = (int(randomg(mu,sd))*factor)+offset;
+	amps[15] = (int(randomg(mu,sd))*factor)+offset;
+	amps[16] = (int(randomg(mu,sd))*factor)+offset;
+	amps[17] = (int(randomg(mu,sd))*factor)+offset;
+	amps[18] = (int(randomg(mu,sd))*factor)+offset;
+	amps[19] = (int(randomg(mu,sd))*factor)+offset;
+	amps[20] = (int(randomg(mu,sd))*factor)+offset;
+	amps[21] = (int(randomg(mu,sd))*factor)+offset;
+	amps[22] = (int(randomg(mu,sd))*factor)+offset;
+	amps[23] = (int(randomg(mu,sd))*factor)+offset;
+	amps[24] = (int(randomg(mu,sd))*factor)+offset;
+	amps[25] = (int(randomg(mu,sd))*factor)+offset;
+	amps[26] = (int(randomg(mu,sd))*factor)+offset;
+	amps[27] = (int(randomg(mu,sd))*factor)+offset;
+	amps[28] = (int(randomg(mu,sd))*factor)+offset;
+	amps[29] = (int(randomg(mu,sd))*factor)+offset;
+	amps[30] = (int(randomg(mu,sd))*factor)+offset;
+	amps[31] = (int(randomg(mu,sd))*factor)+offset;
+	amps[32] = (int(randomg(mu,sd))*factor)+offset;
+	amps[33] = (int(randomg(mu,sd))*factor)+offset;
+	amps[34] = (int(randomg(mu,sd))*factor)+offset;
+	amps[35] = (int(randomg(mu,sd))*factor)+offset;
+	amps[36] = (int(randomg(mu,sd))*factor)+offset;
+	amps[37] = (int(randomg(mu,sd))*factor)+offset;
+	amps[38] = (int(randomg(mu,sd))*factor)+offset;
+	amps[39] = (int(randomg(mu,sd))*factor)+offset;
+	amps[40] = (int(randomg(mu,sd))*factor)+offset;
+	amps[41] = (int(randomg(mu,sd))*factor)+offset;
+	amps[42] = (int(randomg(mu,sd))*factor)+offset;
+	amps[43] = (int(randomg(mu,sd))*factor)+offset;
+	amps[44] = (int(randomg(mu,sd))*factor)+offset;
+	amps[45] = (int(randomg(mu,sd))*factor)+offset;
+	amps[46] = (int(randomg(mu,sd))*factor)+offset;
+	amps[47] = (int(randomg(mu,sd))*factor)+offset;
+	amps[48] = (int(randomg(mu,sd))*factor)+offset;
+	amps[49] = (int(randomg(mu,sd))*factor)+offset;
+	amps[50] = (int(randomg(mu,sd))*factor)+offset;
+	amps[51] = (int(randomg(mu,sd))*factor)+offset;
+	amps[52] = (int(randomg(mu,sd))*factor)+offset;
+	amps[53] = (int(randomg(mu,sd))*factor)+offset;
+	amps[54] = (int(randomg(mu,sd))*factor)+offset;
+	amps[55] = (int(randomg(mu,sd))*factor)+offset;
+	amps[56] = (int(randomg(mu,sd))*factor)+offset;
+	amps[57] = (int(randomg(mu,sd))*factor)+offset;
+	amps[58] = (int(randomg(mu,sd))*factor)+offset;
+	amps[59] = (int(randomg(mu,sd))*factor)+offset;
+	amps[60] = (int(randomg(mu,sd))*factor)+offset;
+	amps[61] = (int(randomg(mu,sd))*factor)+offset;
+	amps[62] = (int(randomg(mu,sd))*factor)+offset;
+	amps[63] = (int(randomg(mu,sd))*factor)+offset;
+	amps[64] = (int(randomg(mu,sd))*factor)+offset;
+	amps[65] = (int(randomg(mu,sd))*factor)+offset;
+	amps[66] = (int(randomg(mu,sd))*factor)+offset;
+	amps[67] = (int(randomg(mu,sd))*factor)+offset;
+	amps[68] = (int(randomg(mu,sd))*factor)+offset;
+	amps[69] = (int(randomg(mu,sd))*factor)+offset;
+	amps[70] = (int(randomg(mu,sd))*factor)+offset;
+	amps[71] = (int(randomg(mu,sd))*factor)+offset;
+	amps[72] = (int(randomg(mu,sd))*factor)+offset;
+	amps[73] = (int(randomg(mu,sd))*factor)+offset;
+	amps[74] = (int(randomg(mu,sd))*factor)+offset;
+	amps[75] = (int(randomg(mu,sd))*factor)+offset;
+	amps[76] = (int(randomg(mu,sd))*factor)+offset;
+	amps[77] = (int(randomg(mu,sd))*factor)+offset;
+	amps[78] = (int(randomg(mu,sd))*factor)+offset;
+	amps[79] = (int(randomg(mu,sd))*factor)+offset;
+	amps[80] = (int(randomg(mu,sd))*factor)+offset;
+	amps[81] = (int(randomg(mu,sd))*factor)+offset;
+	amps[82] = (int(randomg(mu,sd))*factor)+offset;
+	amps[83] = (int(randomg(mu,sd))*factor)+offset;
+	amps[84] = (int(randomg(mu,sd))*factor)+offset;
+	amps[85] = (int(randomg(mu,sd))*factor)+offset;
+	amps[86] = (int(randomg(mu,sd))*factor)+offset;
+	amps[87] = (int(randomg(mu,sd))*factor)+offset;
+	amps[88] = (int(randomg(mu,sd))*factor)+offset;
+	amps[89] = (int(randomg(mu,sd))*factor)+offset;
+	amps[90] = (int(randomg(mu,sd))*factor)+offset;
+	amps[91] = (int(randomg(mu,sd))*factor)+offset;
+	amps[92] = (int(randomg(mu,sd))*factor)+offset;
+	amps[93] = (int(randomg(mu,sd))*factor)+offset;
+	amps[94] = (int(randomg(mu,sd))*factor)+offset;
+	amps[95] = (int(randomg(mu,sd))*factor)+offset;
+	amps[96] = (int(randomg(mu,sd))*factor)+offset;
+	amps[97] = (int(randomg(mu,sd))*factor)+offset;
+	amps[98] = (int(randomg(mu,sd))*factor)+offset;
+	amps[99] = (int(randomg(mu,sd))*factor)+offset;
+	amps[100] = (int(randomg(mu,sd))*factor)+offset;
+	amps[101] = (int(randomg(mu,sd))*factor)+offset;
+	amps[102] = (int(randomg(mu,sd))*factor)+offset;
+	amps[103] = (int(randomg(mu,sd))*factor)+offset;
+	amps[104] = (int(randomg(mu,sd))*factor)+offset;
+	amps[105] = (int(randomg(mu,sd))*factor)+offset;
+	amps[106] = (int(randomg(mu,sd))*factor)+offset;
+	amps[107] = (int(randomg(mu,sd))*factor)+offset;
+	amps[108] = (int(randomg(mu,sd))*factor)+offset;
+	amps[109] = (int(randomg(mu,sd))*factor)+offset;
+	amps[110] = (int(randomg(mu,sd))*factor)+offset;
+	amps[111] = (int(randomg(mu,sd))*factor)+offset;
+	amps[112] = (int(randomg(mu,sd))*factor)+offset;
+	amps[113] = (int(randomg(mu,sd))*factor)+offset;
+	amps[114] = (int(randomg(mu,sd))*factor)+offset;
+	amps[115] = (int(randomg(mu,sd))*factor)+offset;
+	amps[116] = (int(randomg(mu,sd))*factor)+offset;
+	amps[117] = (int(randomg(mu,sd))*factor)+offset;
+	amps[118] = (int(randomg(mu,sd))*factor)+offset;
+	amps[119] = (int(randomg(mu,sd))*factor)+offset;
+	amps[120] = (int(randomg(mu,sd))*factor)+offset;
+	amps[121] = (int(randomg(mu,sd))*factor)+offset;
+	amps[122] = (int(randomg(mu,sd))*factor)+offset;
+	amps[123] = (int(randomg(mu,sd))*factor)+offset;
+	amps[124] = (int(randomg(mu,sd))*factor)+offset;
+	amps[125] = (int(randomg(mu,sd))*factor)+offset;
+	amps[126] = (int(randomg(mu,sd))*factor)+offset;
+	amps[127] = (int(randomg(mu,sd))*factor)+offset;
+	amps[128] = (int(randomg(mu,sd))*factor)+offset;
+	amps[129] = (int(randomg(mu,sd))*factor)+offset;
+	amps[130] = (int(randomg(mu,sd))*factor)+offset;
+	amps[131] = (int(randomg(mu,sd))*factor)+offset;
+	amps[132] = (int(randomg(mu,sd))*factor)+offset;
+	amps[133] = (int(randomg(mu,sd))*factor)+offset;
+	amps[134] = (int(randomg(mu,sd))*factor)+offset;
+	amps[135] = (int(randomg(mu,sd))*factor)+offset;
+	amps[136] = (int(randomg(mu,sd))*factor)+offset;
+	amps[137] = (int(randomg(mu,sd))*factor)+offset;
+	amps[138] = (int(randomg(mu,sd))*factor)+offset;
+	amps[139] = (int(randomg(mu,sd))*factor)+offset;
+	amps[140] = (int(randomg(mu,sd))*factor)+offset;
+	amps[141] = (int(randomg(mu,sd))*factor)+offset;
+
+
+var dbl	i := ceil((t)/( (period) ));
+
+var dbl	A := amps[i];
+
+
+
+
+
+
+
+
+
+
+// PRESYNAPTIC pulses
+var dbl	d := sigmoid(0,6.28,-100000,0,z1) * sigmoid(0,6.28,100000,0,z2);		// unscaled
+
+var dbl	c;		// presynaptic pulses scaled to proper amplitude (via c := d*A  below)
+
+
+
+
+// POSTSYNAPTIC response
+// 1.419 ms from Q10 calc at 25 C (1.18 ms at 29.5C)
+var dbl	s = 0;				// synaptic conductance initial condition
+var dbl	ds := (c - s)/(1419);	// taus = 1.419 = 1419, Q10=1.5,	scale = 1000
+
+
+var dbl	Vs = 0;			// excitatory reversal potential
+
+
+
+
+// Auditory nerve firing adaptation (Rothman et al. 1993)
+var dbl	toff = 200*1000;
+var dbl
+	p := .01*((1-exp(-t/8000)) * ( (exp(-t/3000)) + ((200*exp(-t/16400))+100) ) * (1/(1+exp((t-toff)/100)))^.09);
+									// 164000 tau = 16.4 yields 18.5ms decay Spassova (2004)
+
+
+
+
+
+
+// ---< LOW-THRESHOLD K+ current >---	gLT above
+
+var dbl	Vk		=	-70;						// K+ equilibrium
+
+//var dbl	Cm		=	66;						// for simulation mode only
+
+
+
+
+	// ACTIVATION
+var dbl	theta_w	=	-48,						// half-activation
+		sigma_w	=	6;						// slope
+
+var dbl	w = 0;//.58;//.44;							// initial condition
+
+var dbl	w_inf := (1+exp(-(V-theta_w)/sigma_w))^(-.25);			// ACTIVATION FUNCTION
+
+// Q10 = 3 adjustment from 22C (Rothman & Manis 2003) to temp of 25C -> .719
+var dbl	tau_w := ((100/(6*exp((V+60)/6) + 16*exp(-(V+60)/45)) + 1.5) * 1000) * .719;
+
+var dbl	dw := (w_inf - w)/tau_w;						// instantaneous activation
+
+
+	// PARTIAL INACTIVATION
+var dbl	theta_z	=	-71,
+		sigma_z	=	10;
+
+var dbl	z = .5;//.62;//.70;							// initial condition
+
+var dbl	z_inf := (1-.5)*(1/(1+exp((V-theta_z)/sigma_z))) + .5;		// INACTIVATION FUNCTION
+
+// Q10 = 3 adjustment from 22C (Rothman & Manis 2003) to my temp 25C -> .719
+var dbl	tau_z := ((1000/(exp((V+60)/20) + exp(-(V+60)/8)) + 50) * 1000) * .719;
+
+var dbl	dz := (z_inf - z)/tau_z;						// instantaneous inactivation
+
+
+
+
+	// K-LT CURRENT
+var dbl	I_kLT := gLT * w^4 * z * (V-Vk);					// K-LT CURRENT
+
+
+var dbl	p_klt := ((1/(1+exp((t-toff)/100)))^.09);				// scales K-LT with time offset for PSTH
+
+
+
+
+
+
+
+
+//	TEST ONLY
+
+//var dbl	I_out := s;				// for calibrating lowest CV, correction factor, offset
+//var dbl	I_out := p;				// for testing p taus
+//var dbl	I_out := s*p;				// for (re)calibrating lowest CV, correction factor, offset with p
+
+//var dbl	I_test := s*( (-V-Vs)/60 );		// for calibrating (low CV etc.) but not directly affecting dynamic tau & amp
+
+//var dbl	I_out := -I_kLT;			// K-LT testing
+
+
+//	EXPERIMENTS (final calibration & lowest CV)
+
+var dbl	I := s*( (-V-Vs)/60 );		// Synaptic current
+var dbl	I_out := I*p - I_kLT * p_klt;	// Total current -- I_out = Output to amplifier
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+------------------------------------------
+|						|
+|		ODE SETUP			|
+|						|
+------------------------------------------
+*/
+
+odesys	ode;
+
+
+//	Comment in for interaction w/ NI hardware
+//If these files are in a different folder than the main script, add the path (absolute, not relative)
+includefile "amplifier_cal.kin"	//contains amplifier calibration
+includefile "amplifier_io.kin"	//sets the ode I/O
+
+
+//Change the I/O device name if different, as defined w/ the NI Measurement & Automation Explorer
+ode.idevicename = "Dev1";
+ode.odevicename = "Dev1";
+
+//Independent var - Time
+ode.setindvar(t);
+
+
+
+
+
+// Computations for model
+// algebraic
+ode.addalg(c, d*A);
+
+// differential equations
+ode.adddiff(s, ds);		// synaptic
+ode.adddiff(w,dw);		// voltage-gated
+ode.adddiff(z,dz);		// voltage-gated
+
+
+
+
+
+//Add Output to DC Window
+
+//ode.addout(period, "period");
+
+//ode.addout(i, "i");
+//ode.addout(A, "A");
+
+//ode.addout(d, "d");
+//ode.addout(c, "c");
+//ode.addout(ds, "ds");
+//ode.addout(s, "s");
+//ode.addout(p, "p");
+
+//ode.addout(I, "I");
+//ode.addout(V, "V");
+
+//ode.addout(w,"w");
+//ode.addout(z,"z");
+//ode.addout((w^4)*z,"w4z");
+//ode.addout(I_kLT,"I_kLT");
+//ode.addout(p_klt,"p_klt");
+
+//ode.addout(I_out, "I_out");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+------------------------------------------
+|						|
+|		   ODE SOLVE			|
+|						|
+------------------------------------------
+*/
+
+
+var dbl timescale = 1000000;	// fine timescale necessary for good resolution
+//var dbl timescale = 1000;
+
+
+//Start solving
+ode.solvert(
+	tstart = 0, tend = 400000,  //edit tend to desired value
+	timescale = timescale,	//model is in ms, but the real time is in sec, so *1000 is conversion
+	method = SOLVE_RT + SOLVE_EULER,
+	minstepsize = 1/75000,
+	graphthreadaffinity = 1, threadaffinity = 2,	//try switching the 2 vals for better real-time results
+	reltol = 1e-6, abstol = 1e-6, dt = 1/50, //not used in RT mode
+//	dohistogram = true, histogrambincount = 100, histogramin = 1e-7, histogrammax = 1e-4,
+	dohist = true, histmin = 1e-7, histmax = 1e-4, histbincount = 100
+);

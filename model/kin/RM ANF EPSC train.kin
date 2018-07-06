@@ -1,0 +1,469 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033\deflangfe1033{\fonttbl{\f0\fnil\fcharset0 Courier New;}{\f1\fnil Courier New;}}
+{\colortbl ;\red255\green0\blue0;\red0\green0\blue128;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\nowidctlpar\cf1\b\i\f0\fs16 /*
+\par Simulation of ANF response and NA input current to Sinusoidally Modulated Stimuli
+\par */
+\par 
+\par 
+\par 
+\par 
+\par //\tab\tab PARAMETER TO EDIT
+\par // ***************************************
+\par // *\tab\tab\tab\tab\tab\tab *
+\par // *\tab\tab\tab\tab\tab\tab *
+\par // *\tab\tab\tab\tab\tab\tab *
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 y\cf1\b\i  \cf2\i0 =\cf1\i  \cf3\b0\i0 randseed\cf2\b (\cf4\b0 3601\cf2\b );\cf1\i\tab\tab // CHANGE UPON EACH OPENING
+\par 
+\par // *\tab\tab\tab\tab\tab\tab *
+\par // *\tab\tab\tab\tab\tab\tab *
+\par // *\tab\tab\tab\tab\tab\tab *
+\par // ***************************************
+\par 
+\par 
+\par 
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 int\cf1\b\i 
+\par \tab\cf3\b0\i0 vread\cf1\b\i  \cf2\i0 =\cf1\i  \cf2\i0 true,
+\par \tab\cf3\b0 mcell\cf2\b  = false;
+\par \cf1\i // SIM = false false\cf2\i0 
+\par \cf1\i // SIM + MC = true true\cf2\i0 
+\par \cf1\i // DC + real neuron = true false\cf4\b0\i0 
+\par \cf1\b\i 
+\par 
+\par 
+\par 
+\par 
+\par //State variables\cf3\b0\i0 
+\par \cf2\b var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 V \cf2\b =\cf3\b0  \cf4 0\cf2\b ;\cf1\i\tab //mV
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 dummy_in\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 0.0\cf2\b ;\cf1\i  //if vread = false, "dummy_in" used for Voltage input in amplifier_io.kin
+\par 
+\par 
+\par 
+\par //initiate time\cf3\b0\i0 
+\par \cf2\b var \cf3\b0 dbl\cf2\b\tab\cf3\b0 t\cf2\b  = \cf4\b0 0\cf2\b ;\cf1\i 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par //\tab\tab\tab PARAMETERS TO EDIT
+\par // *************************************************************
+\par // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *
+\par // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *
+\par // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *
+\par \cf4\b0\i0 
+\par \cf2\b var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 SAM_Hz\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 13\cf2\b ;\cf1\i\tab\tab\tab\tab // Hz\tab\tab\tab "modulation depth" constant = 50-350 spikes/s
+\par 
+\par //\tab   13  25  50  100\cf2\i0 
+\par \cf1\i // fractional values of SAM_Hz yieilds artifacts...round 12.5 to 13\cf2\i0 
+\par 
+\par 
+\par 
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 inputs\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 16\cf2\b ;\cf3\b0\tab\tab\tab\cf1\b\i // 8 inputs:\tab\tab mu = 4.5 for good approximation via normal dist\cf3\b0\i0 
+\par \tab\tab\tab\tab\tab\tab\cf1\b\i // 16 inputs:\tab\tab mu = 8.5
+\par 
+\par 
+\par \tab // 16 SYNAPTIC INPUTS
+\par \tab\cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 factor\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 81.92\cf2\b *\cf4\b0 1.21\cf2\b ;\cf1\i\tab\tab // 81.92 avg of 1 input, 1.21 scales to compensate for qub minimizer artifact\cf3\b0\i0 
+\par \tab\cf2\b var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 offset\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 100\cf2\b ;\cf1\i\tab\tab\tab // 100 offset also helps for 16 inputs\cf3\b0\i0 
+\par 
+\par \cf1\b\i\tab // 8 SYNAPTIC INPUTS\cf3\b0\i0 
+\par \cf2\b\tab\cf1\i //var dbl\tab factor = 81.92*1.3;\cf3\b0\i0 
+\par \cf2\b\tab\cf1\i //var dbl\tab offset = 0;\tab\tab\tab // no offset for 8 inputs\cf3\b0\i0 
+\par \cf2\b 
+\par \cf1\i 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 fc\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 200\cf2\b ,\cf1\i\tab\tab // Hz\tab\tab\tab center frequency
+\par \tab\tab\cf3\b0\i0 delta\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 150\cf2\b ;\cf1\i\tab\tab // fc +- delta\tab 150 yields 50 to 350 Hz (100% depth; 50 ~= spont, 350 = max)
+\par 
+\par 
+\par /*
+\par \tab     Assuming center freq of 200...
+\par \tab\tab Depth (%)\tab delta
+\par \tab\tab -------------------
+\par \tab\tab 100\tab\tab 150
+\par \tab\tab 50\tab\tab 75
+\par \tab\tab 25\tab\tab 37.5
+\par */
+\par 
+\par 
+\par // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *\cf3\b0\i0 
+\par \cf1\b\i // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *\cf3\b0\i0 
+\par \cf1\b\i // *\tab\tab\tab\tab\tab\tab\tab\tab\tab  *\cf3\b0\i0 
+\par \cf1\b\i // *************************************************************
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par // =================[ SAM GENERATION ]=========================================
+\par 
+\par // z1-z2 offset time, used below
+\par \cf2\i0 var \cf3\b0 dbl\cf2\b\tab\cf3\b0 z_shift\cf2\b  = \cf4\b0 1000475\cf2\b ;\cf1\i 
+\par \cf2\i0 
+\par 
+\par \cf1\i // offset FM sines yields window for sigmoids in "d" to generate impulses\cf2\i0 
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 z1\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 sin\cf2\b (\cf1\i  \cf2\i0 (\cf4\b0 6.28\cf2\b *(\cf3\b0 fc\cf2\b /\cf4\b0 1000000\cf2\b )*\cf3\b0 t\cf2\b )\cf1\i  \cf2\i0 -\cf1\i  \cf2\i0 (\cf3\b0 delta\cf2\b /\cf3\b0 SAM_Hz\cf2\b )\cf1\i  \cf2\i0 *\cf1\i  \cf3\b0\i0 sin\cf2\b (\cf4\b0 6.28\cf2\b *(\cf3\b0 SAM_Hz\cf2\b /\cf4\b0 1000000\cf2\b )*\cf3\b0 t\cf2\b )\cf1\i  \cf2\i0 ) ;
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 z2\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 sin\cf2\b (\cf1\i  \cf2\i0 (\cf4\b0 6.28\cf2\b *(\cf3\b0 fc\cf2\b /\cf4\b0 1000000\cf2\b )*(\cf3\b0 t\cf2\b +\cf3\b0 z_shift\cf2\b ))\cf1\i  \cf2\i0 -\cf1\i  \cf2\i0 (\cf3\b0 delta\cf2\b /\cf3\b0 SAM_Hz\cf2\b )\cf1\i  \cf2\i0 *\cf1\i  \cf3\b0\i0 sin\cf2\b (\cf4\b0 6.28\cf2\b *(\cf3\b0 SAM_Hz\cf2\b /\cf4\b0 1000000\cf2\b )*(\cf3\b0 t\cf2\b +\cf3\b0 z_shift\cf2\b ))\cf1\i  \cf2\i0 ) ;\cf1\i 
+\par \cf2\i0 
+\par \cf1\i // ============================================================================\cf2\i0 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par \cf1\i // frequency and period information for amplitude scale "A" (rate independent of SAM!)\cf2\i0 
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 freq\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 350\cf2\b ;\cf1\i\tab\tab\tab // frequency that drives A, i, and x\tab doesn't change
+\par \tab\tab\tab\tab\tab\tab // if FREQ > 350 or duration > 400 ms   MUST ADD TO ARRAY!!
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 f\cf1\b\i  \cf2\i0 =\cf1\i  \cf3\b0\i0 freq\cf2\b /\cf4\b0 1000\cf2\b ;
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 period\cf1\b\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf4\b0 1\cf2\b /\cf3\b0 f\cf2\b )*\cf4\b0 1000\cf2\b ;\cf3\b0 
+\par 
+\par 
+\par 
+\par 
+\par \cf1\b\i // BINOMIAL DISTRIBUTION approximated by normal distribution where P(spike) = p = .5\cf3\b0\i0 
+\par 
+\par \cf1\b\i // MUST add .5 correction factor to approximate binomial distribution via normal dist\cf3\b0\i0 
+\par \cf2\b var\cf3\b0  dbl\tab mu \cf2\b =\cf3\b0  \cf2\b (\cf3\b0 inputs\cf2\b *\cf4\b0 .5\cf2\b )+\cf4\b0 .5\cf2\b ,\tab\tab\tab\cf1\i // add .5 to mu for proper correction factor\cf2\i0 
+\par \tab\tab\cf3\b0 sd\cf1\b\i  \cf2\i0 =\cf1\i  \cf3\b0\i0 sqrt\cf2\b ((\cf3\b0 mu\cf2\b -\cf4\b0 .5\cf2\b )*\cf4\b0 .5\cf2\b );\cf1\i\tab\tab // subtract .5 before calculating sd\cf3\b0\i0 
+\par 
+\par 
+\par \pard\cf1\b\i 
+\par // EPSC Amplitudes of each cycle pulled from binomial dist
+\par 
+\par // approximating a binomial distribution (true) with a normal distribution (practical)
+\par \cf2\i0 array\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 1\cf2\b ,\cf4\b0 141\cf2\b ];\cf1\i\tab\tab\tab\tab\tab\tab // <= 350Hz over <=400ms = 140 cycles
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 1\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i\tab\tab // factor+offset yield experimentally observed amplitudes
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 2\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 3\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 4\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 5\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 6\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 7\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 8\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 9\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 10\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 11\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 12\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 13\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 14\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 15\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 16\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 17\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 18\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 19\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 20\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 21\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 22\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 23\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 24\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 25\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 26\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 27\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 28\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 29\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 30\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 31\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 32\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 33\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 34\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 35\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 36\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 37\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 38\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 39\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 40\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 41\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 42\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 43\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 44\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 45\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 46\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 47\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 48\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 49\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 50\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 51\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 52\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 53\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 54\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 55\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 56\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 57\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf3\b0 
+\par \cf1\b\i\tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 58\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 59\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 60\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 61\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 62\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 63\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 64\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 65\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 66\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 67\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 68\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 69\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 70\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 71\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 72\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 73\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 74\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 75\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 76\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 77\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 78\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 79\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 80\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 81\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 82\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 83\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 84\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 85\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 86\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 87\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 88\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 89\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 90\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 91\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 92\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 93\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 94\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 95\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 96\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 97\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 98\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 99\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 100\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 101\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 102\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 103\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 104\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 105\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 106\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 107\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 108\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 109\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 110\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 111\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 112\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 113\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 114\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 115\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 116\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 117\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 118\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 119\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 120\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 121\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 122\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 123\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 124\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 125\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 126\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 127\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 128\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 129\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 130\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 131\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 132\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 133\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 134\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 135\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 136\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 137\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 138\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 139\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 140\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par \tab\cf3\b0\i0 amps\cf2\b [\cf4\b0 141\cf2\b ]\cf1\i  \cf2\i0 =\cf1\i  \cf2\i0 (\cf3\b0 int\cf2\b (\cf3\b0 randomg\cf2\b (\cf3\b0 mu\cf2\b ,\cf3\b0 sd\cf2\b ))*\cf3\b0 factor\cf2\b )+\cf3\b0 offset\cf2\b ;\cf1\i 
+\par 
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 i\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 ceil\cf2\b ((\cf3\b0 t\cf2\b )/(\cf1\i  \cf2\i0 (\cf3\b0 period\cf2\b )\cf1\i  \cf2\i0 ));
+\par \pard\nowidctlpar 
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 A\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 amps\cf2\b [\cf3\b0 i\cf2\b ];
+\par 
+\par 
+\par \cf1\i 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par // PRESYNAPTIC pulses\cf2\i0 
+\par var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 d\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 sigmoid\cf2\b (\cf4\b0 0\cf2\b ,\cf4\b0 6.28\cf2\b ,-\cf4\b0 100000\cf2\b ,\cf4\b0 0\cf2\b ,\cf3\b0 z1\cf2\b )\cf1\i  \cf2\i0 *\cf1\i  \cf3\b0\i0 sigmoid\cf2\b (\cf4\b0 0\cf2\b ,\cf4\b0 6.28\cf2\b ,\cf4\b0 100000\cf2\b ,\cf4\b0 0\cf2\b ,\cf3\b0 z2\cf2\b );\tab\tab\cf1\i // unscaled
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 c\cf2\b ;\cf1\i\tab\tab // presynaptic pulses scaled to proper amplitude (via c := d*A  below)
+\par 
+\par 
+\par 
+\par 
+\par // POSTSYNAPTIC response
+\par // 1.419 ms from Q10 calc at 25 C (1.18 ms at 29.5C)
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 s\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 0\cf2\b ;\tab\tab\tab\tab\tab\cf1\i // synaptic conductance initial condition
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 ds\cf1\b\i  \cf2\i0 :=\cf1\i  \cf2\i0 (\cf3\b0 c\cf1\b\i  \cf2\i0 -\cf1\i  \cf3\b0\i0 s\cf2\b )/(\cf4\b0 1419\cf2\b );\cf1\i\tab\tab // taus = 1.419 = 1419, Q10=1.5\tab scale = 1000
+\par 
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 Vs\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 0\cf2\b ;\tab\tab\tab\tab\cf1\i // excitatory reversal potential
+\par 
+\par 
+\par 
+\par 
+\par // Auditory nerve firing adaptation (Rothman et al. 1993)
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 toff\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 200\cf2\b *\cf4\b0 1000\cf2\b ;\cf1\i 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf2\b 
+\par \cf1\i\tab\cf3\b0\i0 p\cf1\b\i  \cf2\i0 :=\cf1\i  \cf4\b0\i0 .01\cf2\b *((\cf4\b0 1\cf2\b -\cf3\b0 exp\cf2\b (-\cf3\b0 t\cf2\b /\cf4\b0 8000\cf2\b ))\cf1\i  \cf2\i0 *\cf1\i  \cf2\i0 (\cf1\i  \cf2\i0 (\cf3\b0 exp\cf2\b (-\cf3\b0 t\cf2\b /\cf4\b0 3000\cf2\b ))\cf1\i  \cf2\i0 +\cf1\i  \cf2\i0 ((\cf4\b0 200\cf2\b *\cf3\b0 exp\cf2\b (-\cf3\b0 t\cf2\b /\cf4\b0 16400\cf2\b ))+\cf4\b0 100\cf2\b )\cf1\i  \cf2\i0 )\cf1\i  \cf2\i0 *\cf1\i  \cf2\i0 (\cf4\b0 1\cf2\b /(\cf4\b0 1\cf2\b +\cf3\b0 exp\cf2\b ((\cf3\b0 t\cf2\b -\cf3\b0 toff\cf2\b )/\cf4\b0 100\cf2\b )))^\cf4\b0 .09\cf2\b );\cf1\i 
+\par \tab\tab\tab\tab\tab\tab\tab\tab\tab // 164000 tau = 16.4 yields 18.5ms decay Spassova (2004)\cf2\i0 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par \cf1\i //\tab TEST ONLY
+\par \cf2\i0 
+\par \cf1\i //var dbl\tab I_out := s;\tab\tab\tab\tab // for calibrating lowest CV, correction factor, offset
+\par //var dbl\tab I_out := p;\tab\tab\tab\tab // for testing p taus
+\par //var dbl\tab I_out := s*p;\tab\tab\tab\tab // for (re)calibrating lowest CV, correction factor, offset with p
+\par 
+\par //var dbl\tab I_test := s*( (-V-Vs)/60 );\tab\tab // for calibrating (low CV etc.) but not directly affecting dynamic tau & amp
+\par 
+\par 
+\par 
+\par 
+\par //\tab EXPERIMENTS (final calibration & lowest CV)
+\par 
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 I\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 s\cf2\b *(\cf1\i  \cf2\i0 (-\cf3\b0 V\cf2\b -\cf3\b0 Vs\cf2\b )/\cf4\b0 60\cf1\b\i  \cf2\i0 );\cf1\i\tab\tab // Synaptic current
+\par \cf2\i0 var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i\tab\cf3\b0\i0 I_out\cf1\b\i  \cf2\i0 :=\cf1\i  \cf3\b0\i0 I\cf2\b *\cf3\b0 p\cf2\b ;\cf1\i\tab\tab\tab\tab // Total scaled current -- I_out = Output to amplifier\cf2\i0 
+\par \cf1\i 
+\par 
+\par \cf3\b0\i0 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par \cf1\b\i /*
+\par ------------------------------------------
+\par |\tab\tab\tab\tab\tab\tab |
+\par |\tab\tab ODE SETUP\tab\tab\tab |
+\par |\tab\tab\tab\tab\tab\tab |
+\par ------------------------------------------
+\par */\cf3\b0\i0 
+\par 
+\par \cf2\b odesys\cf3\b0\tab ode\cf2\b ;
+\par 
+\par 
+\par \cf1\i //\tab Comment in for interaction w/ NI hardware
+\par //If these files are in a different folder than the main script, add the path (absolute, not relative)
+\par \cf3\b0\i0 includefile\cf1\b\i  \cf5\b0\i0 "amplifier_cal.kin"\cf1\b\i\tab //contains amplifier calibration
+\par \cf3\b0\i0 includefile\cf1\b\i  \cf5\b0\i0 "amplifier_io.kin"\cf1\b\i\tab //sets the ode I/O\cf2\i0 
+\par 
+\par 
+\par \cf1\i //Change the I/O device name if different, as defined w/ the NI Measurement & Automation Explorer\cf2\i0 
+\par ode.idevicename = \cf5\b0 "Dev1"\cf2\b ;
+\par ode.odevicename = \cf5\b0 "Dev1"\cf2\b ;
+\par 
+\par \cf1\i //Independent var - Time\cf2\i0 
+\par ode.setindvar(\cf3\b0 t\cf2\b );\cf3\b0 
+\par \pard 
+\par 
+\par 
+\par \cf1\b\i 
+\par // Computations for model
+\par \pard\nowidctlpar // algebraic
+\par \cf2\i0 ode.addalg(\cf3\b0 c\cf2\b ,\cf1\i  \cf3\b0\i0 d\cf2\b *\cf3\b0 A\cf2\b );\tab\tab\cf1\i // scales impulses to amplitude (A)
+\par 
+\par // differential equations
+\par \cf2\i0 ode.adddiff(\cf3\b0 s\cf2\b ,\cf1\i  \cf3\b0\i0 ds\cf2\b );\tab\tab\cf1\i // solves ds/dt for synaptic conductance
+\par \pard 
+\par 
+\par \pard\nowidctlpar 
+\par 
+\par 
+\par 
+\par //Add Output to DC Window
+\par 
+\par \cf2\i0 
+\par \cf1\i //ode.addout(period, "period");\cf2\i0 
+\par \cf1\i //ode.addout(x, "x");\cf2\i0 
+\par 
+\par \cf1\i //ode.addout(z1, "z1");\cf2\i0 
+\par \cf1\i //ode.addout(z2, "z2");\cf2\i0 
+\par 
+\par 
+\par \cf1\i //ode.addout(h, "h");\cf2\i0 
+\par \cf1\i //ode.addout(i, "i");\cf2\i0 
+\par \cf1\i //ode.addout(j, "j");\cf2\i0 
+\par \cf1\i //ode.addout(A, "A");\cf2\i0 
+\par 
+\par \cf1\i //ode.addout(d, "d");
+\par //ode.addout(c, "c");
+\par //ode.addout(ds, "ds");
+\par //ode.addout(s, "s");
+\par //ode.addout(p, "p");
+\par 
+\par //ode.addout(I, "I");
+\par //ode.addout(V, "V");\cf3\b0\i0 
+\par 
+\par \cf1\b\i //ode.addout(I_out, "I_out");\cf3\b0\i0 
+\par \cf2\b 
+\par \cf5\b0 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par 
+\par \cf1\b\i /*
+\par ------------------------------------------
+\par |\tab\tab\tab\tab\tab\tab |
+\par |\tab\tab    ODE SOLVE\tab\tab\tab |
+\par |\tab\tab\tab\tab\tab\tab |
+\par ------------------------------------------
+\par */\cf5\b0\i0 
+\par 
+\par 
+\par \cf2\b var\cf1\i  \cf3\b0\i0 dbl\cf1\b\i  \cf3\b0\i0 timescale\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 1000000\cf2\b ;\tab\cf1\i // fine timescale necessary for good resolution\cf2\i0 
+\par \cf1\i //var dbl timescale = 1000;\cf5\b0\i0 
+\par 
+\par 
+\par \cf1\b\i //Start solving\cf5\b0\i0 
+\par \cf2\b ode.solvert(\cf5\b0 
+\par \tab\cf3 tstart\cf5  \cf2\b =\cf5\b0  \cf4 0\cf2\b ,\cf5\b0  \cf3 tend\cf5  \cf2\b =\cf5\b0  \cf4 400000\cf2\b ,\cf4\b0  \cf5  \cf1\b\i //edit tend to desired value\cf5\b0\i0 
+\par \tab\cf3 timescale\cf5  \cf2\b =\cf5\b0  \cf3 timescale\cf2\b ,\cf5\b0\tab\cf1\b\i //model is in ms, but the real time is in sec, so *1000 is conversion\cf5\b0\i0 
+\par \tab\cf3 method\cf5  \cf2\b =\cf5\b0  \cf2\b SOLVE_RT + SOLVE_EULER,\cf5\b0 
+\par \tab\cf3 minstepsize\cf1\b\i  \cf2\i0 =\cf1\i  \cf4\b0\i0 1\cf2\b /\cf4\b0 75000\cf2\b ,\cf5\b0 
+\par \tab\cf3 graphthreadaffinity\cf5  \cf2\b =\cf5\b0  \cf4 1\cf2\b ,\cf5\b0  \cf2\b threadaffinity\cf5\b0  \cf2\b =\cf5\b0  \cf4 2\cf2\b ,\cf5\b0\tab\cf1\b\i //try switching the 2 vals for better real-time results\cf5\b0\i0 
+\par \tab\cf3 reltol\cf5  \cf2\b =\cf5\b0  \cf4 1e-6\cf2\b ,\cf5\b0  \cf3 abstol\cf5  \cf2\b =\cf5\b0  \cf4 1e-6\cf2\b ,\cf5\b0  \cf3 dt\cf5  \cf2\b =\cf5\b0  \cf4 1\cf2\b /\cf4\b0 50\cf2\b ,\cf5\b0  \cf1\b\i //not used in RT mode\cf5\b0\i0 
+\par \cf1\b\i //\tab dohistogram = true, histogrambincount = 100, histogramin = 1e-7, histogrammax = 1e-4,\cf5\b0\i0 
+\par \tab\cf3 dohist\cf5  \cf2\b =\cf5\b0  \cf2\b true,\cf5\b0  \cf3 histmin\cf5  \cf2\b =\cf5\b0  \cf4 1e-7\cf2\b ,\cf5\b0  \cf3 histmax\cf5  \cf2\b =\cf5\b0  \cf4 1e-4\cf2\b ,\cf5\b0  \cf3 histbincount\cf5  \cf2\b =\cf5\b0  \cf4 100\cf5 
+\par \pard\cf2\b );\cf0\b0\f1 
+\par }
+ 
