@@ -1,1 +1,2 @@
 # nerve-EPSCs
+Computational model &amp; dynamic clamp implementation of auditory nerve-induced EPSCs in chick Nucleus Angularis neurons
